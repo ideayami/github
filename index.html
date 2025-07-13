@@ -2,40 +2,19 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>私のウェブサイト</title>
-    <style>
-        body {
-            font-family: sans-serif;
-            padding: 20px;
-        }
-        #timeDisplay {
-            margin-top: 10px;
-            font-weight: bold;
-            color: #0066cc;
-        }
-        button {
-            margin-top: 20px;
-            padding: 10px 20px;
-            font-size: 1em;
-        }
-    </style>
+    <title>テストページ</title>
 </head>
 <body>
-    <h1>ようこそ！</h1>
-    <p>これはindex.htmlのサンプルです。</p>
-    <a href="about.html">詳細はこちら</a>
+    <h1>Flask × HTML テスト</h1>
+    <form method="POST">
+        <label>名前を入力してください：</label>
+        <input type="text" name="username" required>
+        <button type="submit">送信</button>
+    </form>
 
-    <br><br>
-    <button onclick="showTime()">現在の時刻を表示</button>
-    <div id="timeDisplay"></div>
-
-    <script>
-        function showTime() {
-            const now = new Date();
-            const timeStr = now.toLocaleTimeString();
-            document.getElementById("timeDisplay").textContent = "現在の時刻：" + timeStr;
-        }
-    </script>
+    {% if name %}
+        <p>こんにちは、{{ name }}さん！</p>
+    {% endif %}
 </body>
 </html>
+
