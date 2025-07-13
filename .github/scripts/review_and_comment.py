@@ -18,18 +18,33 @@ MAX_TOKENS = 600          # 無料版を考慮した制限
 def get_changed_files_with_diff():
     """GitHub API から変更されたファイル一覧と差分情報を取得"""
     api_url = f"https://api.github.com/repos/{REPO}/pulls/{PR_NUMBER}/files"
-    headers = {"Authorization": f"Bearer {GITHUB_TOKEN}"}
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github.v3+json"
+    }
     
+    print(f"📡 GitHub API 呼び出し: {api_url}")
     response = requests.get(api_url, headers=headers)
-    if response.status_code != 200:
+    print(f"📊 レスポンス: {response.status_code}")
+    
+    if response.status_code == 403:
+        print("❌ GitHub API 権限エラー - GITHUB_TOKEN の権限を確認してください")
+        print("🔧 必要な権限: contents:read, pull-requests:write, issues:write")
+        return []
+    elif response.status_code != 200:
         print(f"❌ GitHub API エラー: {response.status_code}")
+        print(f"📄 レスポンス内容: {response.text}")
         return []
     
     files = response.json()
+    print(f"📁 取得されたファイル数: {len(files)}")
+    
     target_files = []
     
     for file_info in files:
         filename = file_info["filename"]
+        print(f"📄 ファイル: {filename} (ステータス: {file_info['status']})")
+        
         if filename.endswith((".py", ".js", ".ts")) and file_info["status"] != "removed":
             target_files.append({
                 "filename": filename,
@@ -46,12 +61,19 @@ def post_comment(body):
     """GitHub PR にコメントを投稿"""
     comment_api = f"https://api.github.com/repos/{REPO}/issues/{PR_NUMBER}/comments"
     headers = {
-        "Authorization": f"Bearer {GITHUB_TOKEN}",
+        "Authorization": f"token {GITHUB_TOKEN}",
         "Accept": "application/vnd.github.v3+json"
     }
     
+    print(f"💬 コメント投稿中...")
     response = requests.post(comment_api, headers=headers, json={"body": body})
-    return response.status_code == 201
+    
+    if response.status_code == 201:
+        return True
+    else:
+        print(f"❌ コメント投稿エラー: {response.status_code}")
+        print(f"📄 レスポンス内容: {response.text}")
+        return False
 
 # --- 行数カウント関数 ---
 def count_lines(file_path):
