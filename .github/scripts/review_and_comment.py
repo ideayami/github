@@ -4,7 +4,8 @@ import requests
 import subprocess
 
 # --- 設定 ---
-openai.api_key = os.getenv("OPENAI_API_KEY")
+# OpenAI 1.0.0+ 対応
+client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 REPO = os.getenv("REPO")
 PR_NUMBER = os.getenv("PR_NUMBER")
@@ -130,13 +131,13 @@ def review_full_file(file_path, code_content):
 ```"""
 
     try:
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo",  # 無料版考慮
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3,
             max_tokens=MAX_TOKENS
         )
-        return response["choices"][0]["message"]["content"]
+        return response.choices[0].message.content
     except Exception as e:
         print(f"❌ OpenAI API エラー: {e}")
         return None
@@ -165,13 +166,13 @@ def review_diff_only(file_path, diff_content):
 ```"""
 
     try:
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo",  # 無料版考慮
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3,
             max_tokens=MAX_TOKENS
         )
-        return response["choices"][0]["message"]["content"]
+        return response.choices[0].message.content
     except Exception as e:
         print(f"❌ OpenAI API エラー: {e}")
         return None
