@@ -1,0 +1,12 @@
+# Render の設定ファイル (Blueprint)
+# このCPU負荷テストツールを静的サイトとしてデプロイします。
+
+services:
+  # サービスの種類を「静的サイト」として定義します
+  - type: static site
+    # サービスの名前（Renderのダッシュボードで表示されます）
+    name: cpu-load-tester
+    # 公開するディレクトリを指定します。
+    # index.htmlがルートディレクトリにあるため、「.」を指定します。
+    publishDir: .
+    # このプロジェクトにはビルド作業は不要です。
