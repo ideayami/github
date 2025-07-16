@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CPU負荷テスト</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            max-width: 600px;
+            width: 90%;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+        
+        h1 {
+            color: #e74c3c;
+            font-size: 28px;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .status {
+            padding: 25px;
+            background: linear-gradient(135deg, #ecf0f1 0%, #bdc3c7 100%);
+            border-radius: 15px;
+            margin: 30px 0;
+            font-size: 18px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .status.loading {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            color: #856404;
+            border: 3px solid #f39c12;
+            animation: pulse 2s infinite;
+        }
+        
+        .status.completed {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            color: #155724;
+            border: 3px solid #27ae60;
+            animation: success 0.5s ease-in-out;
+        }
+        
+        .status.error {
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+            color: #721c24;
+            border: 3px solid #e74c3c;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes success {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 15px;
+            background: linear-gradient(135deg, #ecf0f1 0%, #bdc3c7 100%);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 25px 0;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #e74c3c 0%, #c0392b 100%);
+            transition: width 0.3s ease;
+            width: 0%;
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .progress-fill::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            animation: shimmer 2s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+        
+        .spinner {
+            border: 6px solid #f3f3f3;
+            border-top: 6px solid #e74c3c;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 30px auto;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        #details {
+            background: rgba(52, 73, 94, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-size: 16px;
+            line-height: 1.6;
+            color: #2c3e50;
+        }
+        
+        .warning {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            color: #856404;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-size: 14px;
+            border: 2px solid #f39c12;
+        }
+        
+        .controls {
+            margin-top: 20px;
+        }
+        
+        button {
+            padding: 15px 30px;
+            font-size: 18px;
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .footer {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(52, 73, 94, 0.1);
+            border-radius: 10px;
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+        
+        .system-info {
+            display: none;
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(52, 73, 94, 0.05);
+            border-radius: 8px;
+            font-size: 12px;
+            color: #5a6c7d;
+            text-align: left;
+        }
+        
+        .show-system-info {
+            display: block;
+        }
+        
+        /* レスポンシブデザイン */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            h1 {
+                font-size: 24px;
+            }
+            
+            .status {
+                padding: 20px;
+                font-size: 16px;
+            }
+            
+            button {
+                padding: 12px 24px;
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔥 CPU負荷テスト実行中</h1>
+        
+        <div class="spinner" id="spinner"></div>
+        
+        <div class="status loading" id="status">負荷開始中...</div>
+        
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        
+        <div id="details">設定読み込み中...</div>
+        
+        <div class="warning">
+            ⚠️ 実行中はブラウザが重くなります。緊急停止は<strong>Escキー</strong>を押してください。
+        </div>
+        
+        <div class="controls" id="controls">
+            <!-- 手動開始の場合、ボタンがここに追加される -->
+        </div>
+        
+        <div class="footer">
+            <div>
+                <strong>注意事項:</strong><br>
+                • 実行中は他のタブやアプリケーションが重くなる可能性があります<br>
+                • 長時間実行するとシステムが不安定になる場合があります<br>
+                • 問題が発生した場合は、Escキーで緊急停止してください
+            </div>
+            
+            <div class="system-info" id="systemInfo">
+                <strong>システム情報:</strong><br>
+                <span id="systemDetails">読み込み中...</span>
+            </div>
+            
+            <div style="margin-top: 15px;">
+                <button onclick="toggleSystemInfo()" style="padding: 8px 16px; font-size: 14px;">
+                    システム情報を表示/非表示
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 設定ファイル読み込み -->
+    <script src="config.js"></script>
+    
+    <!-- メインスクリプト -->
+    <script src="main.js"></script>
+    
+    <!-- 追加のユーティリティ機能 -->
+    <script>
+        // システム情報の表示/非表示
+        function toggleSystemInfo() {
+            const systemInfo = document.getElementById('systemInfo');
+            const systemDetails = document.getElementById('systemDetails');
+            
+            if (systemInfo.classList.contains('show-system-info')) {
+                systemInfo.classList.remove('show-system-info');
+            } else {
+                systemInfo.classList.add('show-system-info');
+                
+                // システム情報を更新
+                const info = {
+                    userAgent: navigator.userAgent,
+                    platform: navigator.platform,
+                    language: navigator.language,
+                    hardwareConcurrency: navigator.hardwareConcurrency || 'unknown',
+                    memory: navigator.deviceMemory ? navigator.deviceMemory + 'GB' : 'unknown',
+                    cookieEnabled: navigator.cookieEnabled,
+                    onLine: navigator.onLine,
+                    screen: `${screen.width}x${screen.height}`,
+                    viewport: `${window.innerWidth}x${window.innerHeight}`
+                };
+                
+                systemDetails.innerHTML = Object.entries(info)
+                    .map(([key, value]) => `<strong>${key}:</strong> ${value}`)
+                    .join('<br>');
+            }
+        }
+        
+        // キーボードショートカット
+        document.addEventListener('keydown', function(e) {
+            // Ctrl+Shift+S でシステム情報表示
+            if (e.ctrlKey && e.shiftKey && e.key === 'S') {
+                e.preventDefault();
+                toggleSystemInfo();
+            }
+            
+            // Ctrl+Shift+R でリロード確認
+            if (e.ctrlKey && e.shiftKey && e.key === 'R') {
+                e.preventDefault();
+                if (confirm('ページをリロードしますか？')) {
+                    location.reload();
+                }
+            }
+        });
+        
+        // パフォーマンス監視のUI更新
+        function updatePerformanceInfo() {
+            if (performance && performance.memory) {
+                const memory = performance.memory;
+                const memoryInfo = `
+                    使用メモリ: ${Math.round(memory.usedJSHeapSize / 1024 / 1024)}MB /
+                    総メモリ: ${Math.round(memory.totalJSHeapSize / 1024 / 1024)}MB
+                `;
+                
+                // メモリ情報を詳細エリアに追加（実行中のみ）
+                if (window.cpuLoadTest && window.cpuLoadTest.status().running) {
+                    const details = document.getElementById('details');
+                    if (details && !details.innerHTML.includes('メモリ使用量')) {
+                        details.innerHTML += '<br><small>' + memoryInfo + '</small>';
+                    }
+                }
+            }
+        }
+        
+        // 定期的なパフォーマンス情報更新
+        setInterval(updatePerformanceInfo, 3000);
+        
+        // ページの可視性変更監視
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                console.log('ページが非表示になりました');
+            } else {
+                console.log('ページが表示されました');
+            }
+        });
+        
+        // 初期化完了メッセージ
+        window.addEventListener('load', function() {
+            console.log('CPU負荷テストページが読み込まれました');
+            console.log('利用可能なコマンド: window.cpuLoadTest');
+        });
+    </script>
+</body>
+</html>
