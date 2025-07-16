@@ -1,7 +1,7 @@
 // CPU負荷テスト設定ファイル
 const CONFIG = {
     // 基本設定
-    duration: 3,           // 実行時間（秒）
+    duration: 10,           // 実行時間（秒）
     threadCount: 16,       // スレッド数
     intensity: 'high',     // 負荷強度（low/medium/high/extreme）
 
