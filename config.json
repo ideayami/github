@@ -1,0 +1,10 @@
+{
+  "duration": 10,
+  "threads": "auto",
+  "intensity": "high",
+  "batchSize": 75000,
+  "memorySize": 150000,
+  "autoStart": true,
+  "startDelay": 1500,
+  "updateInterval": 100
+}

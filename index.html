@@ -3,42 +3,840 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CPU負荷テスト</title>
+    <title>CPU負荷テストツール</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 20px; background: #f0f2f5; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-        .container { max-width: 600px; width: 90%; background: #fff; padding: 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; }
-        h1 { color: #e74c3c; font-size: 28px; margin-bottom: 20px; }
-        .status { padding: 20px; border-radius: 8px; margin: 20px 0; font-size: 18px; font-weight: 500; transition: all 0.3s ease; border: 2px solid transparent; }
-        .status.loading { background: #fff3cd; color: #856404; border-color: #f39c12; animation: pulse 1.5s infinite; }
-        .status.completed { background: #d4edda; color: #155724; border-color: #27ae60; }
-        .status.error { background: #f8d7da; color: #721c24; border-color: #e74c3c; }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
-        .progress-bar { width: 100%; height: 20px; background: #e9ecef; border-radius: 10px; overflow: hidden; margin: 25px 0; }
-        .progress-fill { height: 100%; background: linear-gradient(90deg, #e74c3c 0%, #c0392b 100%); transition: width 0.2s ease-out; width: 0%; border-radius: 10px; }
-        .spinner { border: 5px solid #f3f3f3; border-top: 5px solid #e74c3c; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 20px auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        #details { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 20px; font-size: 15px; color: #495057; text-align: left; line-height: 1.6; }
-        .warning { background: #fffbe6; color: #8a6d3b; padding: 15px; border-radius: 8px; margin: 20px 0; font-size: 14px; border: 1px solid #ffeeba; }
-        .controls button { padding: 12px 25px; font-size: 18px; background: #e74c3c; color: white; border: none; border-radius: 8px; cursor: pointer; transition: background-color 0.2s; }
-        .controls button:hover { background: #c0392b; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            max-width: 700px;
+            width: 100%;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        h1 {
+            color: #333;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1rem;
+            margin-bottom: 30px;
+            opacity: 0.8;
+        }
+
+        .status {
+            padding: 20px;
+            border-radius: 15px;
+            margin: 25px 0;
+            font-size: 1.2rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            backdrop-filter: blur(5px);
+        }
+
+        .status.ready {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            color: #2c3e50;
+            border-color: #3498db;
+        }
+
+        .status.running {
+            background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%);
+            color: #2d3436;
+            border-color: #fdcb6e;
+            animation: pulse 2s infinite;
+        }
+
+        .status.completed {
+            background: linear-gradient(135deg, #a8e6cf 0%, #88d8a3 100%);
+            color: #27ae60;
+            border-color: #2ecc71;
+        }
+
+        .status.error {
+            background: linear-gradient(135deg, #ff7675 0%, #fd79a8 100%);
+            color: #2d3436;
+            border-color: #e17055;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        .progress-container {
+            margin: 30px 0;
+            position: relative;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 15px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+            width: 0%;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .progress-text {
+            position: absolute;
+            top: -30px;
+            right: 0;
+            font-size: 1rem;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .config-display {
+            background: rgba(255, 255, 255, 0.7);
+            padding: 25px;
+            border-radius: 15px;
+            margin: 25px 0;
+            text-align: left;
+            color: #444;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .config-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .config-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .config-item {
+            background: rgba(255, 255, 255, 0.5);
+            padding: 12px 15px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .config-label {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 0.95rem;
+        }
+
+        .config-value {
+            color: #7f8c8d;
+            font-family: 'Courier New', monospace;
+            font-weight: 500;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 4px 8px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 25px 0;
+        }
+
+        .metric-card {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: transform 0.2s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .metric-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .metric-label {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+            font-weight: 500;
+        }
+
+        .warning {
+            background: rgba(255, 193, 7, 0.15);
+            border: 2px solid #ffc107;
+            border-radius: 12px;
+            padding: 18px;
+            margin: 25px 0;
+            font-size: 0.95rem;
+            color: #856404;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .warning-icon {
+            font-size: 1.5rem;
+            color: #ffc107;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hide {
+            display: none !important;
+        }
+
+        .config-info {
+            background: rgba(255, 255, 255, 0.6);
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            text-align: left;
+            font-size: 0.9rem;
+            color: #555;
+        }
+
+        .config-info-title {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .config-source {
+            font-family: 'Courier New', monospace;
+            background: rgba(0, 0, 0, 0.1);
+            padding: 8px;
+            border-radius: 5px;
+            margin: 5px 0;
+            word-break: break-all;
+            font-size: 0.85rem;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .config-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .metrics {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🔥 CPU負荷テスト</h1>
-        <div class="spinner" id="spinner"></div>
-        <div class="status" id="status">初期化中...</div>
-        <div class="progress-bar">
-            <div class="progress-fill" id="progressFill"></div>
+        <p class="subtitle">高性能負荷テストツール（自動起動版）</p>
+        
+        <div class="status ready" id="status">
+            設定読み込み中...
         </div>
-        <div id="details">設定を読み込んでいます...</div>
+        
+        <div class="progress-container">
+            <div class="progress-text" id="progressText">0%</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+        </div>
+
+        <div class="metrics" id="metrics">
+            <div class="metric-card">
+                <div class="metric-value" id="activeThreads">0</div>
+                <div class="metric-label">アクティブスレッド</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="elapsedTime">0</div>
+                <div class="metric-label">経過時間 (秒)</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="cpuUsage">0%</div>
+                <div class="metric-label">推定CPU使用率</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="memoryUsage">0</div>
+                <div class="metric-label">メモリ使用量(MB)</div>
+            </div>
+        </div>
+
+        <div class="config-display">
+            <div class="config-title">⚙️ 実行設定</div>
+            <div class="config-grid">
+                <div class="config-item">
+                    <span class="config-label">実行時間:</span>
+                    <span class="config-value" id="configDuration">-</span>
+                </div>
+                <div class="config-item">
+                    <span class="config-label">スレッド数:</span>
+                    <span class="config-value" id="configThreads">-</span>
+                </div>
+                <div class="config-item">
+                    <span class="config-label">負荷強度:</span>
+                    <span class="config-value" id="configIntensity">-</span>
+                </div>
+                <div class="config-item">
+                    <span class="config-label">利用可能コア数:</span>
+                    <span class="config-value" id="availableCores">-</span>
+                </div>
+                <div class="config-item">
+                    <span class="config-label">バッチサイズ:</span>
+                    <span class="config-value" id="configBatchSize">-</span>
+                </div>
+                <div class="config-item">
+                    <span class="config-label">メモリ負荷:</span>
+                    <span class="config-value" id="configMemorySize">-</span>
+                </div>
+            </div>
+        </div>
+
         <div class="warning">
-            ⚠️ 実行中はブラウザが重くなります。緊急停止は<strong>Escキー</strong>を押してください。
+            <span class="warning-icon">⚠️</span>
+            <span>
+                <strong>注意:</strong> 実行中はブラウザが重くなります。
+                緊急停止は<strong>Escキー</strong>を押してください。
+            </span>
         </div>
-        <div class="controls" id="controls"></div>
+
+        <div class="config-info">
+            <div class="config-info-title">📋 設定情報</div>
+            <p><strong>設定読み込み元:</strong></p>
+            <div class="config-source" id="configSource">読み込み中...</div>
+            <p><strong>自動読み込み順序:</strong><br>
+            1. cpu_load_config.json（優先）<br>
+            2. config.json（フォールバック）<br>
+            3. デフォルト設定（JSON読み込み失敗時）</p>
+        </div>
+
+        <div class="spinner hide" id="spinner"></div>
     </div>
 
-    <script src="config.js"></script>
-    <script src="main.js"></script>
+    <script>
+        // デフォルト設定
+        const DEFAULT_CONFIG = {
+            duration: 5,
+            threads: 'auto',
+            intensity: 'high',
+            batchSize: 50000,
+            memorySize: 100000,
+            autoStart: true,
+            startDelay: 1500,
+            updateInterval: 100
+        };
+
+        // 強度設定
+        const INTENSITY_CONFIGS = {
+            low: { multiplier: 0.5, memoryMultiplier: 0.3 },
+            medium: { multiplier: 1.0, memoryMultiplier: 0.6 },
+            high: { multiplier: 1.5, memoryMultiplier: 1.0 },
+            extreme: { multiplier: 2.5, memoryMultiplier: 1.5 }
+        };
+
+        // グローバル変数
+        let config = {};
+        let workers = [];
+        let isRunning = false;
+        let startTime = 0;
+        let completedWorkers = 0;
+        let progressInterval;
+        let metricsInterval;
+        let memoryUsage = 0;
+        let configSource = 'デフォルト設定';
+
+        // DOM要素
+        const elements = {
+            status: document.getElementById('status'),
+            progressFill: document.getElementById('progressFill'),
+            progressText: document.getElementById('progressText'),
+            spinner: document.getElementById('spinner'),
+            activeThreads: document.getElementById('activeThreads'),
+            elapsedTime: document.getElementById('elapsedTime'),
+            cpuUsage: document.getElementById('cpuUsage'),
+            memoryUsage: document.getElementById('memoryUsage'),
+            configDuration: document.getElementById('configDuration'),
+            configThreads: document.getElementById('configThreads'),
+            configIntensity: document.getElementById('configIntensity'),
+            configBatchSize: document.getElementById('configBatchSize'),
+            configMemorySize: document.getElementById('configMemorySize'),
+            availableCores: document.getElementById('availableCores'),
+            configSource: document.getElementById('configSource')
+        };
+
+        // JSONファイル自動読み込み
+        async function loadConfig() {
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            config = { ...DEFAULT_CONFIG };
+            
+            // 自動でJSONファイルを読み込む（優先順位順）
+            const configFiles = ['cpu_load_config.json', 'config.json'];
+            
+            for (const configFile of configFiles) {
+                try {
+                    const response = await fetch(configFile);
+                    if (response.ok) {
+                        const jsonConfig = await response.json();
+                        config = { ...config, ...jsonConfig };
+                        configSource = configFile;
+                        console.log(`設定をJSONファイルから読み込みました: ${configFile}`);
+                        break;
+                    }
+                } catch (error) {
+                    console.warn(`JSONファイルの読み込みに失敗: ${configFile}`, error);
+                }
+            }
+            
+            // URLパラメータから設定を読み込み（JSONより優先）
+            let urlOverrides = false;
+            
+            if (urlParams.get('duration')) {
+                config.duration = parseInt(urlParams.get('duration')) || config.duration;
+                urlOverrides = true;
+            }
+            
+            if (urlParams.get('threads')) {
+                const threadParam = urlParams.get('threads');
+                config.threads = threadParam === 'auto' ? 'auto' : parseInt(threadParam) || config.threads;
+                urlOverrides = true;
+            }
+            
+            if (urlParams.get('intensity')) {
+                const intensity = urlParams.get('intensity');
+                config.intensity = INTENSITY_CONFIGS[intensity] ? intensity : config.intensity;
+                urlOverrides = true;
+            }
+            
+            if (urlParams.get('batchSize')) {
+                config.batchSize = parseInt(urlParams.get('batchSize')) || config.batchSize;
+                urlOverrides = true;
+            }
+            
+            if (urlParams.get('memorySize')) {
+                config.memorySize = parseInt(urlParams.get('memorySize')) || config.memorySize;
+                urlOverrides = true;
+            }
+
+            // 設定ソースを更新
+            if (urlOverrides) {
+                configSource += ' + URLパラメータ';
+            }
+
+            // スレッド数の自動調整
+            if (config.threads === 'auto') {
+                config.threads = Math.min(navigator.hardwareConcurrency || 4, 16);
+            }
+            
+            // 強度に応じた調整
+            const intensityConfig = INTENSITY_CONFIGS[config.intensity];
+            config.effectiveBatchSize = Math.floor(config.batchSize * intensityConfig.multiplier);
+            config.effectiveMemorySize = Math.floor(config.memorySize * intensityConfig.memoryMultiplier);
+            
+            return config;
+        }
+
+        // Worker用のインライン関数
+        function createWorkerBlob() {
+            const workerCode = `
+                let isRunning = false;
+                let startTime = 0;
+                let config = {};
+                let memoryArray = [];
+                let iterationCount = 0;
+
+                self.onmessage = function(e) {
+                    if (e.data.action === 'start') {
+                        isRunning = true;
+                        startTime = Date.now();
+                        config = e.data.config;
+                        iterationCount = 0;
+                        
+                        // 複数の負荷処理を並行実行
+                        intensiveCpuLoad();
+                        memoryLoad();
+                        
+                        self.postMessage({ type: 'started' });
+                    } else if (e.data.action === 'stop') {
+                        isRunning = false;
+                        memoryArray = [];
+                        self.postMessage({ type: 'stopped' });
+                    } else if (e.data.action === 'getStats') {
+                        self.postMessage({ 
+                            type: 'stats', 
+                            memoryUsage: memoryArray.length,
+                            iterations: iterationCount
+                        });
+                    }
+                };
+
+                function intensiveCpuLoad() {
+                    function calculate() {
+                        if (!isRunning) return;
+                        
+                        const startCalc = Date.now();
+                        const calcDuration = 60; // 60ms間計算
+                        
+                        while (Date.now() - startCalc < calcDuration) {
+                            // 集約的な数学計算
+                            for (let i = 0; i < config.effectiveBatchSize / 10; i++) {
+                                // 複雑な計算
+                                const x = Math.random() * 1000;
+                                const y = Math.random() * 1000;
+                                
+                                Math.pow(x, y % 3);
+                                Math.sin(x) * Math.cos(y);
+                                Math.sqrt(x * Math.PI) + Math.log(y + 1);
+                                Math.atan2(y, x);
+                                
+                                // 配列操作
+                                const arr = new Array(100).fill(0).map(() => Math.random());
+                                arr.sort();
+                                
+                                iterationCount++;
+                            }
+                        }
+                        
+                        // 経過時間チェック
+                        if (Date.now() - startTime >= config.duration * 1000) {
+                            self.postMessage({ type: 'completed' });
+                            return;
+                        }
+                        
+                        setTimeout(calculate, 5);
+                    }
+                    calculate();
+                }
+
+                function memoryLoad() {
+                    const interval = setInterval(() => {
+                        if (!isRunning) {
+                            clearInterval(interval);
+                            return;
+                        }
+                        
+                        try {
+                            // メモリ消費パターン
+                            const chunkSize = config.effectiveMemorySize;
+                            const chunk = new Array(chunkSize);
+                            
+                            for (let i = 0; i < chunkSize; i++) {
+                                chunk[i] = {
+                                    id: i,
+                                    value: Math.random(),
+                                    timestamp: Date.now(),
+                                    data: new Array(10).fill(Math.random())
+                                };
+                            }
+                            
+                            memoryArray.push(chunk);
+                            
+                            // メモリ使用量制限（GC対策）
+                            if (memoryArray.length > 150) {
+                                memoryArray.splice(0, 20);
+                            }
+                            
+                        } catch (e) {
+                            // メモリ不足時の処理
+                            memoryArray = memoryArray.slice(-50);
+                        }
+                    }, 150);
+                }
+            `;
+            
+            return new Blob([workerCode], { type: 'application/javascript' });
+        }
+
+        // 初期化
+        function initializeUI() {
+            // 設定表示
+            elements.configDuration.textContent = `${config.duration}秒`;
+            elements.configThreads.textContent = config.threads;
+            elements.configIntensity.textContent = config.intensity.toUpperCase();
+            elements.configBatchSize.textContent = config.effectiveBatchSize.toLocaleString();
+            elements.configMemorySize.textContent = config.effectiveMemorySize.toLocaleString();
+            elements.availableCores.textContent = navigator.hardwareConcurrency || '不明';
+            elements.configSource.textContent = configSource;
+            
+            // 初期メトリクス
+            elements.activeThreads.textContent = '0';
+            elements.elapsedTime.textContent = '0';
+            elements.cpuUsage.textContent = '0%';
+            elements.memoryUsage.textContent = '0';
+            
+            elements.status.textContent = '準備完了 - 自動開始まで待機中...';
+            elements.status.className = 'status ready';
+        }
+
+        // 負荷テスト開始
+        function startLoadTest() {
+            if (isRunning) return;
+            
+            isRunning = true;
+            startTime = Date.now();
+            completedWorkers = 0;
+            memoryUsage = 0;
+            
+            // UI更新
+            elements.status.textContent = `🔥 CPU負荷テスト実行中... (${config.duration}秒間)`;
+            elements.status.className = 'status running';
+            elements.spinner.classList.remove('hide');
+            
+            // Worker作成と開始
+            const workerBlob = createWorkerBlob();
+            const workerUrl = URL.createObjectURL(workerBlob);
+            
+            for (let i = 0; i < config.threads; i++) {
+                const worker = new Worker(workerUrl);
+                worker.onmessage = handleWorkerMessage;
+                worker.onerror = handleWorkerError;
+                workers.push(worker);
+                
+                worker.postMessage({
+                    action: 'start',
+                    config: config
+                });
+            }
+            
+            // メトリクス更新開始
+            elements.activeThreads.textContent = config.threads;
+            progressInterval = setInterval(updateProgress, config.updateInterval);
+            metricsInterval = setInterval(updateMetrics, config.updateInterval);
+            
+            // メインスレッドでも軽い負荷
+            mainThreadLoad();
+        }
+
+        // Workerメッセージハンドラ
+        function handleWorkerMessage(e) {
+            if (e.data.type === 'completed') {
+                completedWorkers++;
+                if (completedWorkers >= config.threads) {
+                    completeTest();
+                }
+            } else if (e.data.type === 'stats') {
+                memoryUsage += e.data.memoryUsage;
+            }
+        }
+
+        // Workerエラーハンドラ
+        function handleWorkerError(error) {
+            console.error('Worker error:', error);
+            elements.status.textContent = '❌ エラーが発生しました';
+            elements.status.className = 'status error';
+            stopTest();
+        }
+
+        // 進捗更新
+        function updateProgress() {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min((elapsed / (config.duration * 1000)) * 100, 100);
+            
+            elements.progressFill.style.width = progress + '%';
+            elements.progressText.textContent = Math.round(progress) + '%';
+            
+            if (progress >= 100) {
+                completeTest();
+            }
+        }
+
+        // メトリクス更新
+        function updateMetrics() {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            elements.elapsedTime.textContent = elapsed;
+            
+            // Worker統計を取得
+            workers.forEach(worker => {
+                worker.postMessage({ action: 'getStats' });
+            });
+            
+            // 擬似的なCPU使用率
+            const baseUsage = 60;
+            const intensityMultiplier = INTENSITY_CONFIGS[config.intensity].multiplier;
+            const threadMultiplier = Math.min(config.threads / (navigator.hardwareConcurrency || 4), 1);
+            const cpuUsage = Math.min(98, baseUsage + (intensityMultiplier * threadMultiplier * 30) + Math.random() * 10);
+            
+            elements.cpuUsage.textContent = Math.round(cpuUsage) + '%';
+            
+            // メモリ使用量表示
+            const memoryMB = Math.round(memoryUsage * config.effectiveMemorySize * 0.000001);
+            elements.memoryUsage.textContent = memoryMB;
+            memoryUsage = 0; // リセット
+        }
+
+        // メインスレッド負荷
+        function mainThreadLoad() {
+            let animationId;
+            
+            function animate() {
+                if (!isRunning) return;
+                
+                // 軽いDOM操作とvisual効果
+                const hue = (Date.now() / 100) % 360;
+                document.body.style.filter = `hue-rotate(${hue}deg)`;
+                
+                // 軽い計算負荷
+                for (let i = 0; i < 2000; i++) {
+                    Math.random() * Math.random();
+                }
+                
+                animationId = requestAnimationFrame(animate);
+            }
+            
+            animate();
+        }
+
+        // テスト完了
+        function completeTest() {
+            if (!isRunning) return;
+            
+            isRunning = false;
+            clearInterval(progressInterval);
+            clearInterval(metricsInterval);
+            
+            // UI更新
+            elements.progressFill.style.width = '100%';
+            elements.progressText.textContent = '100%';
+            elements.status.textContent = '✅ 負荷テスト完了！';
+            elements.status.className = 'status completed';
+            elements.spinner.classList.add('hide');
+            elements.activeThreads.textContent = '0';
+            
+            // Worker終了
+            workers.forEach(worker => {
+                worker.postMessage({ action: 'stop' });
+                worker.terminate();
+            });
+            workers = [];
+            
+            // DOM正常化
+            document.body.style.filter = '';
+            
+            // 5秒後に自動リロード
+            setTimeout(() => {
+                location.reload();
+            }, 5000);
+        }
+
+        // 緊急停止
+        function emergencyStop() {
+            if (!isRunning) return;
+            
+            elements.status.textContent = '🛑 緊急停止されました';
+            elements.status.className = 'status error';
+            stopTest();
+        }
+
+        // テスト停止
+        function stopTest() {
+            isRunning = false;
+            clearInterval(progressInterval);
+            clearInterval(metricsInterval);
+            
+            workers.forEach(worker => {
+                worker.postMessage({ action: 'stop' });
+                worker.terminate();
+            });
+            workers = [];
+            
+            elements.spinner.classList.add('hide');
+            elements.activeThreads.textContent = '0';
+            document.body.style.filter = '';
+        }
+
+        // キーボードイベント
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                emergencyStop();
+            }
+        });
+
+        // ページロード時の処理
+        window.addEventListener('load', async () => {
+            elements.status.textContent = '設定読み込み中...';
+            
+            await loadConfig();
+            initializeUI();
+            
+            // 自動開始
+            setTimeout(startLoadTest, config.startDelay);
+        });
+
+        // エラーハンドリング
+        window.addEventListener('error', (e) => {
+            console.error('Global error:', e);
+            elements.status.textContent = '❌ システムエラーが発生しました';
+            elements.status.className = 'status error';
+            stopTest();
+        });
+
+        // デバッグ用API
+        window.cpuLoadTest = {
+            start: startLoadTest,
+            stop: stopTest,
+            config: config,
+            reload: () => location.reload(),
+            status: () => ({ running: isRunning, workers: workers.length })
+        };
+    </script>
 </body>
 </html>
